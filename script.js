@@ -1,4 +1,13 @@
 
+
+let gameActive = true;
+
+const resultType = document.querySelector('.result-type');
+const winnerDisplay = document.querySelector('.winner');
+const endResult = document.querySelector('.end-result');
+const restartBtn = document.querySelector('.restart-btn');
+
+
 function gameBoard() {
 	const array = [];
 
@@ -18,12 +27,12 @@ function gameBoard() {
 			array[i][j] = null;
 		}
 	}
-
 	return array;
 }
 
 function playerMark(array, mark, index1, index2) {
 	// Sanity check at first : 
+	// The game state (array) is updated only if the move is valid. But this function doesn’t know or handle the DOM -- [1] refer [2]
 	if (index1 < 0 || index1 >= array.length || index2 < 0 || index2 >= array[1].length) {
 		// If index out of bounds, do nothing.
 		return;
@@ -97,8 +106,8 @@ function checkDraw(array) {
 function gameFlow(array, player1Mark, player2Mark) {
 
 	const players = [
-		{ name: "Player1", mark: player1Mark },
-		{ name: "Player2", mark: player2Mark },
+		{ name: "Player 1", mark: player1Mark },
+		{ name: "Player 2", mark: player2Mark },
 	];
 
 	let count = 0; // Start with Player1
@@ -109,19 +118,28 @@ function gameFlow(array, player1Mark, player2Mark) {
 	}
 
 	function updateBoard(row, col) {
+
+		// Prevent further moves if game is inactive
+		if (!gameActive) return;
+
 		const currentPlayer = nextTurn();
 		playerMark(array, currentPlayer.mark, row, col); // Update board
 		const winner = winCheck(array, player1Mark, player2Mark);
 
 		if (winner) {
-			console.log(`${winner} wins!`);
-			resetGame(array); // Reset the game
+			gameActive = false; // Set the flag first
+			resultType.textContent = "Winner!";
+			winnerDisplay.textContent = `${currentPlayer.name} (${currentPlayer.mark})`;
+			endResult.style.visibility = 'visible';
+			// Then reset the game
 			return;
 		}
 
 		if (checkDraw(array)) {
-			console.log("It's a draw!");
-			resetGame(array); // Reset the game
+			gameActive = false;
+			resultType.textContent = "It's a draw!";
+			winnerDisplay.textContent = "";
+			endResult.style.visibility = 'visible';
 			return;
 		}
 
@@ -134,104 +152,97 @@ function gameFlow(array, player1Mark, player2Mark) {
 
 		count = 1 - count;
 	}
-
-	// Example flow: Replace with user input or interaction
-	updateBoard(0, 0); // Player1 marks (row 0, col 0)
-	updateBoard(1, 1); // Player2 marks (row 1, col 1)
-	updateBoard(0, 1); // Player1 marks (row 0, col 1)
-	updateBoard(2, 2); // Player2 marks (row 2, col 2)
+	return updateBoard;
 }
-
-
 
 let playerThatGoesFirst = "Player1";
 let playerThatGoesSecond = "Player2";
 
-function resetGame(array) {
-	// Clear the board
-	for (let i = 0; i < array.length; i++) {
-		for (let j = 0; j < array[i].length; j++) {
-			array[i][j] = null;
-		}
+
+
+// Initialize the board container
+const boardContainer = document.querySelector('.board');
+
+// Get the gameBoard array
+const board = gameBoard();
+const updateBoard = gameFlow(board, "X", "O");
+
+// Render cells dynamically
+for (let i = 0; i < board.length; i++) {
+	for (let j = 0; j < board[i].length; j++) {
+		const cell = document.createElement('div');
+		cell.classList.add('cell');
+		cell.dataset.row = i;
+		cell.dataset.col = j;
+		boardContainer.appendChild(cell);
 	}
-
-	// Swap players when round ends, so that the both players get equal chance.
-	[playerThatGoesFirst, playerThatGoesSecond] = [playerThatGoesSecond, playerThatGoesFirst];
-
-	console.log(`Next round: ${playerThatGoesFirst} starts.`);
 }
 
 
+// Add event listeners to each cell
+const cells = document.querySelectorAll('.cell');
+cells.forEach((cell) => {
+	cell.addEventListener('click', (event) => {
+		const row = parseInt(event.target.dataset.row, 10);
+		const col = parseInt(event.target.dataset.col, 10);
 
+		// Call the returned updateBoard function
 
+		//[2] The DOM update logic is outside of playerMark—in the updateBoard function and the event listener. 
+		// In this code:
 
-// Example usage : 
-const board = gameBoard(); // Create a new board.
+		// The click event triggers the listener.
+		// The listener extracts the row and col and passes them to updateBoard.
+		// Regardless of whether playerMark allows or rejects the move:
+		// The DOM (event.target.textContent) is updated with the mark from board.
 
-playerMark(board, "X", 0, 0); // Mark the top-left corner with "X".
-console.log(board); // Check the board after marking.
+		// Therefore, check if's its valid move or not before updating the DOM.
 
-playerMark(board, "O", 0, 0); // Try to mark the same cell with "O".
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Scalability for winCheck : 
-
-function winCheck(array, players) {
-	const gridSize = array.length; // Size of the grid (e.g., 3 for a 3x3 grid)
-  
-	// Check rows
-	for (let i = 0; i < gridSize; i++) {
-	  for (let player of players) {
-		if (array[i].every(cell => cell === player.mark)) {
-		  return player.mark;  // Winner found
+		if (board[row][col] === null) {
+			updateBoard(row, col);
+			// Update cell display
+			const currentPlayerMark = board[row][col]; // Get the mark
+			event.target.textContent = currentPlayerMark;
 		}
-	  }
-	}
-  
-	// Check columns
-	for (let j = 0; j < gridSize; j++) {
-	  for (let player of players) {
-		if (array.every(row => row[j] === player.mark)) {
-		  return player.mark;  // Winner found
+		else {
+			alert("You Blind ?");
 		}
-	  }
-	}
-  
-	// Check diagonals (two diagonals in any grid)
-	if (array.every((row, idx) => row[idx] === players[0].mark)) {
-	  return players[0].mark;  // Winner found
-	}
-	if (array.every((row, idx) => row[gridSize - 1 - idx] === players[0].mark)) {
-	  return players[0].mark;  // Winner found
-	}
-  
-	return null;  // No winner yet
-  }
+	});
+});
 
-  */
+// The issue in your resetGame function is that the board array being cleared inside the function is not the same board array passed to the updateBoard function in gameFlow. This mismatch causes the game state to behave incorrectly after resetting.
+
+// Therefore, Pass the board array explicitly to resetGame:
+// Update the resetGame function call in the event listener to explicitly pass the board array.
+
+// Objects (including arrays) are passed by reference:
+// When you pass the board array to a function, you're passing a reference to the same object in memory. This means modifications made to board inside resetGame directly affect the original array.
+
+restartBtn.addEventListener('click', () => resetGame(board));
+
+// You can remove this arg completely and it'd work. But for better scalability, it's much better that you keep this arg, so that ANY board can be cleared.
+function resetGame(board) {
+	// Clear the board array
+	for (let i = 0; i < board.length; i++) {
+		for (let j = 0; j < board[i].length; j++) {
+			board[i][j] = null;
+		}
+	}
+
+	// Empty all the cells i.e; DOM elements visible.
+	cells.forEach((cell) => {
+		cell.textContent = '';
+	})
+
+	// Reset result display
+	resultType.textContent = "";
+	winnerDisplay.textContent = "";
+	endResult.style.visibility = "hidden";
+
+	// Swap players for fairness
+	[playerThatGoesFirst, playerThatGoesSecond] = [playerThatGoesSecond, playerThatGoesFirst];
+
+	console.log(`Next round: ${playerThatGoesFirst} starts.`);
+	gameActive = true; // Reset the gameActive flag
+}
+

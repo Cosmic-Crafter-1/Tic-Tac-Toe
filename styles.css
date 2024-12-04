@@ -1,0 +1,68 @@
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    min-height: 99vh;
+    min-width: 99vw;
+
+    border: 2px solid black;
+}
+
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 5px;
+    width: 350px;
+    height: 350px;
+    margin: auto;
+}
+
+.cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #333;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.cell:hover {
+    background-color: #f0f0f0;
+}
+
+.x {
+    color: blue;
+}
+
+.o {
+    color: red;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 4em;
+}
+
+.player-info {
+    display: flex;
+    gap: 6.5em;
+}
+
+.end-result {
+    visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    align-items: center;
+}
+
+.restart-btn {
+    width: 200px;
+    height: 40px;
+}
